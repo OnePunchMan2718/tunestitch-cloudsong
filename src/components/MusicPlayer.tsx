@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
-import Waveform from './Waveform';
 
 const MusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -149,10 +148,7 @@ const MusicPlayer: React.FC = () => {
         </div>
       </div>
       
-      {/* Waveform component */}
-      <div className="mt-3 hidden sm:block">
-        <Waveform isPlaying={isPlaying} progress={currentTime / duration} />
-      </div>
+      {/* Waveform component has been removed */}
     </div>
   );
 };
