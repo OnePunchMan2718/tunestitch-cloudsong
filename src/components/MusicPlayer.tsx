@@ -9,7 +9,7 @@ import {
   Repeat, 
   Shuffle,
   Heart,
-  Waveform as WaveformIcon
+  BarChart // replacing Waveform with BarChart which is available in lucide-react
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -155,7 +155,7 @@ const MusicPlayer: React.FC = () => {
             pressed={showWaveform}
             onPressedChange={setShowWaveform}
           >
-            <WaveformIcon size={18} />
+            <BarChart size={18} />
           </Toggle>
           
           <div className="hidden sm:flex items-center gap-2">
