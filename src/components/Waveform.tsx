@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 interface WaveformProps {
   isPlaying: boolean;
   progress: number;
+  dominantColor?: string; // Added this optional property
 }
 
-const Waveform: React.FC<WaveformProps> = ({ isPlaying, progress }) => {
+const Waveform: React.FC<WaveformProps> = ({ isPlaying, progress, dominantColor }) => {
   // Create an array of random heights for the waveform bars
   const numBars = 80;
   const bars = Array.from({ length: numBars }, () => 
@@ -31,6 +32,7 @@ const Waveform: React.FC<WaveformProps> = ({ isPlaying, progress }) => {
               height: `${height * 100}%`,
               width: `${100 / numBars}%`,
               maxWidth: '4px',
+              backgroundColor: isPlayed && dominantColor ? dominantColor : undefined,
               '--bar-index': index
             } as React.CSSProperties}
           />
