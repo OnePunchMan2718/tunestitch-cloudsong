@@ -16,6 +16,7 @@ import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import Waveform from './Waveform';
 import { motion, AnimatePresence } from 'framer-motion';
+import { extractDominantColor, generateColorPalette } from '@/utils/colorExtractor';
 
 const MusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -24,6 +25,15 @@ const MusicPlayer: React.FC = () => {
   const [volume, setVolume] = useState(80);
   const [isLiked, setIsLiked] = useState(false);
   const [showWaveform, setShowWaveform] = useState(false);
+  const [dominantColor, setDominantColor] = useState('#8B5CF6'); // Default music-primary color
+  const [colorPalette, setColorPalette] = useState({
+    primary: '#8B5CF6',
+    secondary: '#7E69AB',
+    accent: '#E4DDFF',
+    text: '#F6F6F7',
+    background: '#1A1F2C',
+    isLight: false
+  });
   
   // Mock song data
   const currentSong = {
@@ -31,6 +41,32 @@ const MusicPlayer: React.FC = () => {
     artist: "CloudSound",
     coverUrl: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9"
   };
+  
+  // Extract colors when the song changes
+  useEffect(() => {
+    if (currentSong.coverUrl) {
+      const extractColors = async () => {
+        try {
+          // Show animation by resetting color first
+          setDominantColor('#8B5CF6');
+          
+          // Extract the dominant color
+          const extractedColor = await extractDominantColor(currentSong.coverUrl);
+          setDominantColor(extractedColor);
+          
+          // Generate a palette from the dominant color
+          const palette = generateColorPalette(extractedColor);
+          setColorPalette(palette);
+        } catch (error) {
+          console.error('Failed to extract colors:', error);
+          // Fallback to default color
+          setDominantColor('#8B5CF6');
+        }
+      };
+      
+      extractColors();
+    }
+  }, [currentSong.coverUrl]);
   
   // Toggle play/pause
   const togglePlayback = () => {
@@ -80,18 +116,31 @@ const MusicPlayer: React.FC = () => {
     setDuration(180); // 3 minutes in seconds
   }, []);
   
+  // Dynamic CSS variables for colors based on extracted palette
+  const dynamicColorStyle = {
+    "--dynamic-primary": colorPalette.primary,
+    "--dynamic-secondary": colorPalette.secondary,
+    "--dynamic-accent": colorPalette.accent,
+    "--dynamic-text": colorPalette.text,
+    "--dynamic-background": colorPalette.background,
+  } as React.CSSProperties;
+  
   return (
     <motion.div 
       className="audio-player"
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
+      style={dynamicColorStyle}
     >
       {/* Track progress */}
       <div className="w-full h-1 bg-music-secondary/30 mb-4">
         <motion.div 
-          className="h-full bg-music-primary"
-          style={{ width: `${(currentTime / duration) * 100}%` }}
+          className="h-full"
+          style={{ 
+            background: dominantColor,
+            width: `${(currentTime / duration) * 100}%` 
+          }}
           initial={{ width: 0 }}
           animate={{ width: `${(currentTime / duration) * 100}%` }}
           transition={{ duration: 0.1 }}
@@ -99,18 +148,26 @@ const MusicPlayer: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-3 gap-2">
-        {/* Song info */}
-        <div className="flex items-center gap-3">
-          <img 
+        {/* Song info with fade-in animation */}
+        <motion.div 
+          className="flex items-center gap-3"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.img 
             src={currentSong.coverUrl} 
             alt={currentSong.title}
             className="h-12 w-12 rounded-md object-cover"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
           />
           <div className="overflow-hidden">
             <h4 className="font-medium text-sm truncate">{currentSong.title}</h4>
             <p className="text-xs text-music-muted truncate">{currentSong.artist}</p>
           </div>
-        </div>
+        </motion.div>
         
         {/* Player controls */}
         <div className="flex items-center justify-center gap-3">
@@ -122,8 +179,12 @@ const MusicPlayer: React.FC = () => {
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-full bg-music-primary text-white hover:bg-music-primary/90"
+              className="rounded-full hover:bg-music-primary/90"
               onClick={togglePlayback}
+              style={{ 
+                background: dominantColor,
+                color: colorPalette.isLight ? '#1A1F2C' : '#F6F6F7'
+              }}
             >
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
             </Button>
@@ -145,6 +206,7 @@ const MusicPlayer: React.FC = () => {
             className="text-music-muted data-[state=on]:text-music-primary"
             pressed={isLiked}
             onPressedChange={setIsLiked}
+            style={{ color: isLiked ? dominantColor : undefined }}
           >
             <Heart size={18} />
           </Toggle>
@@ -154,6 +216,7 @@ const MusicPlayer: React.FC = () => {
             className="text-music-muted data-[state=on]:text-music-primary"
             pressed={showWaveform}
             onPressedChange={setShowWaveform}
+            style={{ color: showWaveform ? dominantColor : undefined }}
           >
             <BarChart size={18} />
           </Toggle>
@@ -171,7 +234,7 @@ const MusicPlayer: React.FC = () => {
         </div>
       </div>
       
-      {/* Optional Waveform component */}
+      {/* Optional Waveform component with animation */}
       <AnimatePresence>
         {showWaveform && (
           <motion.div 
@@ -181,7 +244,11 @@ const MusicPlayer: React.FC = () => {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Waveform isPlaying={isPlaying} progress={currentTime / duration} />
+            <Waveform 
+              isPlaying={isPlaying} 
+              progress={currentTime / duration} 
+              dominantColor={dominantColor}
+            />
           </motion.div>
         )}
       </AnimatePresence>

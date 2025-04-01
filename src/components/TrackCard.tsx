@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Play, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { extractDominantColor, generateColorPalette } from '@/utils/colorExtractor';
 
 export interface Track {
   id: string;
@@ -21,6 +22,26 @@ interface TrackCardProps {
 }
 
 const TrackCard: React.FC<TrackCardProps> = ({ track, onClick, className }) => {
+  const [dominantColor, setDominantColor] = useState('#8B5CF6');
+  const [colorLoaded, setColorLoaded] = useState(false);
+  
+  // Extract color from track cover when component mounts
+  useEffect(() => {
+    if (track.coverUrl) {
+      const getColor = async () => {
+        try {
+          const color = await extractDominantColor(track.coverUrl!);
+          setDominantColor(color);
+          setColorLoaded(true);
+        } catch (error) {
+          console.error('Failed to extract color:', error);
+        }
+      };
+      
+      getColor();
+    }
+  }, [track.coverUrl]);
+  
   // Format time for display
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -44,7 +65,7 @@ const TrackCard: React.FC<TrackCardProps> = ({ track, onClick, className }) => {
       onClick={onClick}
       whileHover={{ 
         scale: 1.03, 
-        boxShadow: "0 10px 25px -5px rgba(139, 92, 246, 0.3)" 
+        boxShadow: `0 10px 25px -5px ${dominantColor}40` 
       }}
       transition={{ 
         type: "spring", 
@@ -72,7 +93,11 @@ const TrackCard: React.FC<TrackCardProps> = ({ track, onClick, className }) => {
           transition={{ duration: 0.2 }}
         >
           <motion.div 
-            className="rounded-full p-3 bg-music-primary/80 hover:bg-music-primary"
+            className="rounded-full p-3 hover:bg-music-primary"
+            style={{ 
+              backgroundColor: colorLoaded ? `${dominantColor}80` : '#8B5CF680',
+              transition: 'background-color 0.3s ease'
+            }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -90,13 +115,20 @@ const TrackCard: React.FC<TrackCardProps> = ({ track, onClick, className }) => {
             {formatPlays(track.plays)} plays • {formatTime(track.duration)}
           </span>
           
-          <motion.div whileTap={{ scale: 0.9 }}>
+          <motion.div 
+            whileTap={{ scale: 0.9 }}
+            animate={{ color: track.isLiked ? dominantColor : undefined }}
+          >
             <Heart 
               size={16} 
               className={cn(
                 "cursor-pointer transition-colors",
-                track.isLiked ? "text-music-primary fill-music-primary" : "text-music-muted"
+                track.isLiked ? "fill-music-primary" : "text-music-muted"
               )}
+              style={{ 
+                color: track.isLiked ? dominantColor : undefined,
+                fill: track.isLiked ? dominantColor : undefined 
+              }}
             />
           </motion.div>
         </div>
