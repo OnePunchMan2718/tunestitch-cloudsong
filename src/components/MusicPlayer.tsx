@@ -8,11 +8,14 @@ import {
   Volume2, 
   Repeat, 
   Shuffle,
-  Heart 
+  Heart,
+  Waveform as WaveformIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
+import Waveform from './Waveform';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -20,6 +23,7 @@ const MusicPlayer: React.FC = () => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(80);
   const [isLiked, setIsLiked] = useState(false);
+  const [showWaveform, setShowWaveform] = useState(false);
   
   // Mock song data
   const currentSong = {
@@ -77,13 +81,21 @@ const MusicPlayer: React.FC = () => {
   }, []);
   
   return (
-    <div className="audio-player">
+    <motion.div 
+      className="audio-player"
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Track progress */}
       <div className="w-full h-1 bg-music-secondary/30 mb-4">
-        <div 
+        <motion.div 
           className="h-full bg-music-primary"
           style={{ width: `${(currentTime / duration) * 100}%` }}
-        ></div>
+          initial={{ width: 0 }}
+          animate={{ width: `${(currentTime / duration) * 100}%` }}
+          transition={{ duration: 0.1 }}
+        ></motion.div>
       </div>
       
       <div className="grid grid-cols-3 gap-2">
@@ -106,14 +118,16 @@ const MusicPlayer: React.FC = () => {
             <SkipBack size={18} />
           </Button>
           
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="rounded-full bg-music-primary text-white hover:bg-music-primary/90"
-            onClick={togglePlayback}
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-          </Button>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full bg-music-primary text-white hover:bg-music-primary/90"
+              onClick={togglePlayback}
+            >
+              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+            </Button>
+          </motion.div>
           
           <Button variant="ghost" size="icon" className="text-music-muted hover:text-music-text">
             <SkipForward size={18} />
@@ -135,6 +149,15 @@ const MusicPlayer: React.FC = () => {
             <Heart size={18} />
           </Toggle>
           
+          <Toggle
+            aria-label="Toggle waveform" 
+            className="text-music-muted data-[state=on]:text-music-primary"
+            pressed={showWaveform}
+            onPressedChange={setShowWaveform}
+          >
+            <WaveformIcon size={18} />
+          </Toggle>
+          
           <div className="hidden sm:flex items-center gap-2">
             <Volume2 size={18} className="text-music-muted" />
             <Slider
@@ -148,8 +171,21 @@ const MusicPlayer: React.FC = () => {
         </div>
       </div>
       
-      {/* Waveform component has been removed */}
-    </div>
+      {/* Optional Waveform component */}
+      <AnimatePresence>
+        {showWaveform && (
+          <motion.div 
+            className="mt-3 hidden sm:block"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Waveform isPlaying={isPlaying} progress={currentTime / duration} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
